@@ -4,7 +4,7 @@ namespace Jobby\Tests;
 
 use Jobby\Helper;
 use Jobby\Jobby;
-use Opis\Closure\SerializableClosure;
+use Laravel\SerializableClosure\SerializableClosure;
 
 /**
  * @coversDefaultClass Jobby\Jobby

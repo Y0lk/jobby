@@ -9,6 +9,12 @@ Jobby can handle logging, locking, error emails and more.
 
 **NEW REPO:** We have moved `jobby` to a Github org. Please update your remotes to `https://github.com/jobbyphp/jobby.git`.
 
+
+## Tests ##
+
+- docker run --rm --interactive --tty -v $(pwd):/app composer:2.0.7 composer install
+- docker run -v $(pwd):/var/app php:7.4.0-fpm php /var/app/vendor/bin/phpunit /var/app/tests/
+
 ## Features ##
 
 - Maintain one master crontab job.
