@@ -5,12 +5,13 @@ namespace Jobby\Tests;
 use Jobby\BackgroundJob;
 use Jobby\Helper;
 use Laravel\SerializableClosure\SerializableClosure;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * @coversDefaultClass Jobby\BackgroundJob
  */
-class BackgroundJobTest extends \PHPUnit_Framework_TestCase
+class BackgroundJobTest extends TestCase
 {
     const JOB_NAME = 'name';
 
@@ -27,8 +28,10 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
     /**
      * {@inheritdoc}
      */
-    protected function setUp()
+    protected function setUp(): void
     {
+        parent::setUp();
+
         $this->logFile = __DIR__ . '/_files/BackgroundJobTest.log';
         if (file_exists($this->logFile)) {
             unlink($this->logFile);
@@ -40,11 +43,13 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
     /**
      * {@inheritdoc}
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         if (file_exists($this->logFile)) {
             unlink($this->logFile);
         }
+
+        parent::tearDown();
     }
 
     public function runProvider()
@@ -74,8 +79,8 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetConfig()
     {
-        $job = new BackgroundJob('test job',[]);
-        $this->assertInternalType('array',$job->getConfig());
+        $job = new BackgroundJob('test job', []);
+        $this->assertIsArray($job->getConfig());
     }
 
     /**
@@ -100,16 +105,16 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
     {
         $this->runJob(['command' => 'invalid-command']);
 
-        $this->assertContains('invalid-command', $this->getLogContent());
+        $this->assertStringContainsString('invalid-command', $this->getLogContent());
 
         if ($this->helper->getPlatform() === Helper::UNIX) {
-            $this->assertContains('not found', $this->getLogContent());
-            $this->assertContains(
+            $this->assertStringContainsString('not found', $this->getLogContent());
+            $this->assertStringContainsString(
                 "ERROR: Job exited with status '127'",
                 $this->getLogContent()
             );
         } else {
-            $this->assertContains(
+            $this->assertStringContainsString(
                 'not recognized as an internal or external command',
                 $this->getLogContent()
             );
@@ -129,7 +134,7 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
             ]
         );
 
-        $this->assertContains(
+        $this->assertStringContainsString(
             'ERROR: Closure did not return true! Returned:',
             $this->getLogContent()
         );
@@ -196,8 +201,8 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
             ]
         );
 
-        $this->assertContains('stdout output', @file_get_contents($stdout));
-        $this->assertContains('stderr output', @file_get_contents($stderr));
+        $this->assertStringContainsString('stdout output', @file_get_contents($stdout));
+        $this->assertStringContainsString('stderr output', @file_get_contents($stderr));
 
         unlink($stderr);
         unlink($stdout);
@@ -209,7 +214,9 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
      */
     public function testNotSendMailOnMissingRecipients()
     {
-        $helper = $this->getMock('Jobby\Helper', ['sendMail']);
+        $helper = $this->getMockBuilder(Helper::class)
+            ->onlyMethods(['sendMail'])
+            ->getMock();
         $helper->expects($this->never())
             ->method('sendMail')
         ;
@@ -230,7 +237,9 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
      */
     public function testMailShouldTriggerHelper()
     {
-        $helper = $this->getMock('Jobby\Helper', ['sendMail']);
+        $helper = $this->getMockBuilder(Helper::class)
+            ->onlyMethods(['sendMail'])
+            ->getMock();
         $helper->expects($this->once())
             ->method('sendMail')
         ;
@@ -255,10 +264,12 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped("'maxRuntime' is not supported on Windows");
         }
 
-        $helper = $this->getMock('Jobby\Helper', ['getLockLifetime']);
+        $helper = $this->getMockBuilder(Helper::class)
+            ->onlyMethods(['getLockLifetime'])
+            ->getMock();
         $helper->expects($this->once())
             ->method('getLockLifetime')
-            ->will($this->returnValue(0))
+            ->willReturn(0)
         ;
 
         $this->runJob(
@@ -281,10 +292,12 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped("'maxRuntime' is not supported on Windows");
         }
 
-        $helper = $this->getMock('Jobby\Helper', ['getLockLifetime']);
+        $helper = $this->getMockBuilder(Helper::class)
+            ->onlyMethods(['getLockLifetime'])
+            ->getMock();
         $helper->expects($this->once())
             ->method('getLockLifetime')
-            ->will($this->returnValue(2))
+            ->willReturn(2)
         ;
 
         $this->runJob(
@@ -295,7 +308,7 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
             $helper
         );
 
-        $this->assertContains(
+        $this->assertStringContainsString(
             'MaxRuntime of 1 secs exceeded! Current runtime: 2 secs',
             $this->getLogContent()
         );
@@ -366,6 +379,10 @@ class BackgroundJobTest extends \PHPUnit_Framework_TestCase
     private function getJobConfig(array $config)
     {
         $helper = new Helper();
+
+        if (isset($config['closure']) && $config['closure'] instanceof SerializableClosure) {
+            $config['closure'] = $config['closure']->getClosure();
+        }
 
         if (isset($config['closure'])) {
             $wrapper = new SerializableClosure($config['closure']);

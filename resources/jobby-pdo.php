@@ -11,8 +11,8 @@
 //
 
 use Jobby\Jobby;
-use Opis\Closure\SerializableClosure;
 use Jobby\Exception;
+use Laravel\SerializableClosure\SerializableClosure;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -90,7 +90,13 @@ $jobby = new Jobby();
 foreach ($jobbies as $job) {
     // Filter out each value, which is not set (for example, "maxRuntime" is not defined in the job).
     $job = array_filter($job);
-    $job['closure'] = unserialize($job['command']);
+
+    $closure = @unserialize($job['command']);
+    if ($closure instanceof SerializableClosure) {
+        $job['closure'] = $closure->getClosure();
+        unset($job['command']);
+    }
+
     $jobName = $job['name'];
     unset($job['name']);
     try {

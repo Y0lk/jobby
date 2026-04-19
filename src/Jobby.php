@@ -124,6 +124,10 @@ class Jobby
             throw new Exception("Either 'command' or 'closure' is required for '$job' job");
         }
 
+        if (isset($config['closure']) && $config['closure'] instanceof SerializableClosure) {
+            $config['closure'] = $config['closure']->getClosure();
+        }
+
         if (isset($config['command']) &&
             (
                 $config['command'] instanceof Closure ||
@@ -205,6 +209,10 @@ class Jobby
     protected function getExecutableCommand($job, array $config)
     {
         if (isset($config['closure'])) {
+            if ($config['closure'] instanceof SerializableClosure) {
+                $config['closure'] = $config['closure']->getClosure();
+            }
+
             $wrapper = new SerializableClosure($config['closure']);
             $config['closure'] = serialize($wrapper);
         }

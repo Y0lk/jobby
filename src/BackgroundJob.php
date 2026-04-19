@@ -2,8 +2,6 @@
 
 namespace Jobby;
 
-use Laravel\SerializableClosure\SerializableClosure;
-
 class BackgroundJob
 {
     /**

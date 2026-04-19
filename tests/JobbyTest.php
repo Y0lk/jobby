@@ -5,11 +5,12 @@ namespace Jobby\Tests;
 use Jobby\Helper;
 use Jobby\Jobby;
 use Laravel\SerializableClosure\SerializableClosure;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass Jobby\Jobby
  */
-class JobbyTest extends \PHPUnit_Framework_TestCase
+class JobbyTest extends TestCase
 {
     /**
      * @var string
@@ -24,24 +25,28 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
     /**
      * {@inheritdoc}
      */
-    protected function setUp()
+    protected function setUp(): void
     {
+        parent::setUp();
+
         $this->logFile = __DIR__ . '/_files/JobbyTest.log';
         if (file_exists($this->logFile)) {
             unlink($this->logFile);
         }
-        
+
         $this->helper = new Helper();
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         if (file_exists($this->logFile)) {
             unlink($this->logFile);
         }
+
+        parent::tearDown();
     }
 
     /**
@@ -54,7 +59,7 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
         $jobby->add(
             'HelloWorldShell',
             [
-                'command'  => 'php ' . __DIR__ . '/_files/helloworld.php',
+                'command'  => PHP_BINARY . ' ' . __DIR__ . '/_files/helloworld.php',
                 'schedule' => '* * * * *',
                 'output'   => $this->logFile,
             ]
@@ -77,7 +82,7 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
         $jobby->add(
             'HelloWorldShell',
             [
-                'command'  => 'php ' . __DIR__ . '/_files/helloworld.php',
+                'command'  => PHP_BINARY . ' ' . __DIR__ . '/_files/helloworld.php',
                 'schedule' => "* {$hour} * * *",
                 'output'   => $this->logFile,
             ]
@@ -97,7 +102,7 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
      * @covers ::add
      * @covers ::run
      */
-    public function testOpisClosure()
+    public function testSerializableClosureCommand()
     {
         $fn = static function () {
             echo 'Another function!';
@@ -125,6 +130,35 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
         sleep($this->getSleepTime());
 
         $this->assertEquals('Another function!', $this->getLogContent());
+    }
+
+    /**
+     * @covers ::add
+     * @covers ::run
+     */
+    public function testSerializableClosureConfig()
+    {
+        $fn = static function () {
+            echo 'Wrapped function!';
+
+            return true;
+        };
+
+        $jobby = new Jobby();
+        $jobby->add(
+            'HelloWorldWrappedClosure',
+            [
+                'closure'  => new SerializableClosure($fn),
+                'schedule' => '* * * * *',
+                'output'   => $this->logFile,
+            ]
+        );
+        $jobby->run();
+
+        // Job runs asynchronously, so wait a bit
+        sleep($this->getSleepTime());
+
+        $this->assertEquals('Wrapped function!', $this->getLogContent());
     }
 
     /**
@@ -188,8 +222,8 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
         // Job runs asynchronously, so wait a bit
         sleep($this->getSleepTime());
 
-        $this->assertContains('job-1', $this->getLogContent());
-        $this->assertContains('job-2', $this->getLogContent());
+        $this->assertStringContainsString('job-1', $this->getLogContent());
+        $this->assertStringContainsString('job-2', $this->getLogContent());
     }
 
     /**
@@ -257,13 +291,13 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
     public function testGetJobs()
     {
         $jobby = new Jobby();
-        $this->assertCount(0,$jobby->getJobs());
-        
+        $this->assertCount(0, $jobby->getJobs());
+
         $jobby->add(
             'test job1',
             [
                 'command' => 'test',
-                'schedule' => '* * * * *'
+                'schedule' => '* * * * *',
             ]
         );
 
@@ -271,19 +305,20 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
             'test job2',
             [
                 'command' => 'test',
-                'schedule' => '* * * * *'
+                'schedule' => '* * * * *',
             ]
         );
 
-        $this->assertCount(2,$jobby->getJobs());
+        $this->assertCount(2, $jobby->getJobs());
     }
 
     /**
      * @covers ::add
-     * @expectedException \Jobby\Exception
      */
     public function testExceptionOnMissingJobOptionCommand()
     {
+        $this->expectException(\Jobby\Exception::class);
+
         $jobby = new Jobby();
 
         $jobby->add(
@@ -296,10 +331,11 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers ::add
-     * @expectedException \Jobby\Exception
      */
     public function testExceptionOnMissingJobOptionSchedule()
     {
+        $this->expectException(\Jobby\Exception::class);
+
         $jobby = new Jobby();
 
         $jobby->add(
@@ -358,7 +394,7 @@ class JobbyTest extends \PHPUnit_Framework_TestCase
         $jobby->run();
         sleep(2);
 
-        $this->assertContains('ERROR: MaxRuntime of 1 secs exceeded!', $this->getLogContent());
+        $this->assertStringContainsString('ERROR: MaxRuntime of 1 secs exceeded!', $this->getLogContent());
     }
 
     /**

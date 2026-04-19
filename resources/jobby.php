@@ -18,7 +18,7 @@ $jobby->add('CommandExample', array(
 ));
 
 $jobby->add('ClosureExample', array(
-    'command' => function() {
+    'closure' => function() {
         echo "I'm a function!\n";
         return true;
     },

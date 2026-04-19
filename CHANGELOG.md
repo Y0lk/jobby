@@ -1,3 +1,8 @@
+## Unreleased
+
+* Add support for `laravel/serializable-closure` 2.x.
+* Replace the remaining `Opis\Closure` example usage with Laravel Serializable Closure.
+
 ## 3.4.0
 
 * Allow two jobs of the same name to run (#92)
