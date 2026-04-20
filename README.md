@@ -10,12 +10,13 @@ Jobby can handle logging, locking, error emails and more.
 This repository is a maintained fork of the original abandoned `hellogerard/jobby` package.
 The Composer package name is `y0lk/jobby`, while the PHP namespace remains `Jobby\`.
 The first release of this fork is `4.0.0` because it includes breaking package and mailer changes.
+Current development targets PHP 8.0+ and uses `opis/closure` 4.x for closure serialization.
 
 
 ## Tests ##
 
 - docker run --rm --interactive --tty -v $(pwd):/app composer:2.0.7 composer install
-- docker run -v $(pwd):/var/app php:7.4.0-fpm php /var/app/vendor/bin/phpunit /var/app/tests/
+- docker run -v $(pwd):/var/app php:8.0-cli php /var/app/vendor/bin/phpunit /var/app/tests/
 
 ## Features ##
 
@@ -121,6 +122,7 @@ $jobby->add('DisabledExample', [
 ### Running closures ###
 
 When running closures, beware that nothing outside of the closure is visible (see #93)!
+Closures are serialized directly through `opis/closure` 4.x, so you do not need to wrap them manually.
 
 ```php
 <?php

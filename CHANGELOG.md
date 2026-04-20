@@ -3,12 +3,15 @@
 ## 4.0.0
 
 * Publish the maintained fork as `y0lk/jobby` instead of `hellogerard/jobby`.
+* Require PHP 8.0 or newer.
 * Add Composer branch alias `4.x-dev` for the fork's `master` branch.
 * Replace deprecated `swiftmailer/swiftmailer` with `phpmailer/phpmailer`.
 * Change `Jobby\Helper` mailer integration from SwiftMailer types to PHPMailer types.
+* Update closure serialization to `opis/closure` 4.x and serialize closures directly through the Opis 4 API.
+* Remove the `symfony/process` dependency and resolve the PHP binary with native PHP fallbacks.
+* Add GitHub Actions CI for PHP 8.0 through 8.5 and remove the Travis setup.
 * Normalize the default sender address for environments that only expose a short hostname.
-* Add support for `laravel/serializable-closure` 2.x.
-* Replace the remaining `Opis\Closure` example usage with Laravel Serializable Closure.
+* Rework package metadata and docs for the maintained `y0lk/jobby` fork, including upgrade notes for 4.0.
 
 ## 3.4.0
 

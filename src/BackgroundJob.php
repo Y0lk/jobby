@@ -2,6 +2,8 @@
 
 namespace Jobby;
 
+use function Opis\Closure\unserialize as opis_unserialize;
+
 class BackgroundJob
 {
     /**
@@ -231,7 +233,7 @@ class BackgroundJob
 
     protected function runFunction()
     {
-        $command = unserialize($this->config['closure']);
+        $command = opis_unserialize($this->config['closure']);
 
         ob_start();
         try {

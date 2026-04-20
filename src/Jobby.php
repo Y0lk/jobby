@@ -4,8 +4,7 @@ namespace Jobby;
 
 use Closure;
 use DateTimeImmutable;
-use Laravel\SerializableClosure\SerializableClosure;
-use Symfony\Component\Process\PhpExecutableFinder;
+use function Opis\Closure\serialize as opis_serialize;
 
 class Jobby
 {
@@ -124,22 +123,13 @@ class Jobby
             throw new Exception("Either 'command' or 'closure' is required for '$job' job");
         }
 
-        if (isset($config['closure']) && $config['closure'] instanceof SerializableClosure) {
-            $config['closure'] = $config['closure']->getClosure();
-        }
-
         if (isset($config['command']) &&
             (
-                $config['command'] instanceof Closure ||
-                $config['command'] instanceof SerializableClosure
+                $config['command'] instanceof Closure
             )
         ) {
             $config['closure'] = $config['command'];
             unset($config['command']);
-
-            if ($config['closure'] instanceof SerializableClosure) {
-                $config['closure'] = $config['closure']->getClosure();
-            }
         }
 
         $config = array_merge($this->config, $config);
@@ -209,12 +199,7 @@ class Jobby
     protected function getExecutableCommand($job, array $config)
     {
         if (isset($config['closure'])) {
-            if ($config['closure'] instanceof SerializableClosure) {
-                $config['closure'] = $config['closure']->getClosure();
-            }
-
-            $wrapper = new SerializableClosure($config['closure']);
-            $config['closure'] = serialize($wrapper);
+            $config['closure'] = opis_serialize($config['closure']);
         }
 
         if (strpos(__DIR__, 'phar://') === 0) {
@@ -230,8 +215,22 @@ class Jobby
      */
     protected function getPhpBinary()
     {
-        $executableFinder = new PhpExecutableFinder();
+        if (defined('PHP_BINARY') && is_string(PHP_BINARY) && PHP_BINARY !== '') {
+            return PHP_BINARY;
+        }
 
-        return $executableFinder->find();
+        $binary = 'php';
+        if ($this->getHelper()->getPlatform() === Helper::WINDOWS) {
+            $binary .= '.exe';
+        }
+
+        if (defined('PHP_BINDIR') && is_string(PHP_BINDIR) && PHP_BINDIR !== '') {
+            $candidate = rtrim(PHP_BINDIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $binary;
+            if (file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $binary;
     }
 }

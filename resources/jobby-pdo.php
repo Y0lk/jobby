@@ -10,9 +10,11 @@
 // * * * * * cd /path/to/project && php jobby-pdo.php 1>> /dev/null 2>&1
 //
 
+use Closure;
 use Jobby\Jobby;
 use Jobby\Exception;
-use Laravel\SerializableClosure\SerializableClosure;
+use function Opis\Closure\serialize as opis_serialize;
+use function Opis\Closure\unserialize as opis_unserialize;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -70,8 +72,7 @@ $secondJobFn = static function () {
     return true;
 };
 
-$wrapper = new SerializableClosure($secondJobFn);
-$secondJobFnSerialized = serialize($wrapper);
+$secondJobFnSerialized = opis_serialize($secondJobFn);
 $insertCronJobConfiguration->execute(
     ['ClosureExample', $secondJobFnSerialized, '* * * * *', 'logs/closure-pdo.log']
 );
@@ -91,10 +92,14 @@ foreach ($jobbies as $job) {
     // Filter out each value, which is not set (for example, "maxRuntime" is not defined in the job).
     $job = array_filter($job);
 
-    $closure = @unserialize($job['command']);
-    if ($closure instanceof SerializableClosure) {
-        $job['closure'] = $closure->getClosure();
-        unset($job['command']);
+    try {
+        $closure = opis_unserialize($job['command']);
+        if ($closure instanceof Closure) {
+            $job['closure'] = $closure;
+            unset($job['command']);
+        }
+    } catch (\Throwable $e) {
+        // Plain shell commands are stored in the same column as serialized closures.
     }
 
     $jobName = $job['name'];

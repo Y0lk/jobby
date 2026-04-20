@@ -4,9 +4,9 @@ namespace Jobby\Tests;
 
 use Jobby\BackgroundJob;
 use Jobby\Helper;
-use Laravel\SerializableClosure\SerializableClosure;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
+use function Opis\Closure\serialize as opis_serialize;
 
 /**
  * @coversDefaultClass Jobby\BackgroundJob
@@ -380,13 +380,8 @@ class BackgroundJobTest extends TestCase
     {
         $helper = new Helper();
 
-        if (isset($config['closure']) && $config['closure'] instanceof SerializableClosure) {
-            $config['closure'] = $config['closure']->getClosure();
-        }
-
         if (isset($config['closure'])) {
-            $wrapper = new SerializableClosure($config['closure']);
-            $config['closure'] = serialize($wrapper);
+            $config['closure'] = opis_serialize($config['closure']);
         }
 
         return array_merge(

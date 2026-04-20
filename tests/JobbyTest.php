@@ -4,7 +4,6 @@ namespace Jobby\Tests;
 
 use Jobby\Helper;
 use Jobby\Jobby;
-use Laravel\SerializableClosure\SerializableClosure;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -102,24 +101,18 @@ class JobbyTest extends TestCase
      * @covers ::add
      * @covers ::run
      */
-    public function testSerializableClosureCommand()
+    public function testCommandClosureCanCaptureVariablesAfterSerialization()
     {
-        $fn = static function () {
-            echo 'Another function!';
-
-            return true;
-        };
-
+        $message = 'Another function!';
         $jobby = new Jobby();
-        $wrapper = new SerializableClosure($fn);
-        $serialized = serialize($wrapper);
-        $wrapper = unserialize($serialized);
-        $closure = $wrapper->getClosure();
-
         $jobby->add(
             'HelloWorldClosure',
             [
-                'command'  => $closure,
+                'command'  => static function () use ($message) {
+                    echo $message;
+
+                    return true;
+                },
                 'schedule' => '* * * * *',
                 'output'   => $this->logFile,
             ]
@@ -129,26 +122,25 @@ class JobbyTest extends TestCase
         // Job runs asynchronously, so wait a bit
         sleep($this->getSleepTime());
 
-        $this->assertEquals('Another function!', $this->getLogContent());
+        $this->assertEquals($message, $this->getLogContent());
     }
 
     /**
      * @covers ::add
      * @covers ::run
      */
-    public function testSerializableClosureConfig()
+    public function testClosureConfigCanCaptureVariablesAfterSerialization()
     {
-        $fn = static function () {
-            echo 'Wrapped function!';
-
-            return true;
-        };
-
+        $message = 'Wrapped function!';
         $jobby = new Jobby();
         $jobby->add(
             'HelloWorldWrappedClosure',
             [
-                'closure'  => new SerializableClosure($fn),
+                'closure'  => static function () use ($message) {
+                    echo $message;
+
+                    return true;
+                },
                 'schedule' => '* * * * *',
                 'output'   => $this->logFile,
             ]
@@ -158,7 +150,7 @@ class JobbyTest extends TestCase
         // Job runs asynchronously, so wait a bit
         sleep($this->getSleepTime());
 
-        $this->assertEquals('Wrapped function!', $this->getLogContent());
+        $this->assertEquals($message, $this->getLogContent());
     }
 
     /**
@@ -395,6 +387,22 @@ class JobbyTest extends TestCase
         sleep(2);
 
         $this->assertStringContainsString('ERROR: MaxRuntime of 1 secs exceeded!', $this->getLogContent());
+    }
+
+    /**
+     * @covers ::getPhpBinary
+     */
+    public function testGetPhpBinary()
+    {
+        $jobby = new class () extends Jobby {
+            public function exposedGetPhpBinary()
+            {
+                return $this->getPhpBinary();
+            }
+        };
+
+        $this->assertIsString($jobby->exposedGetPhpBinary());
+        $this->assertNotSame('', $jobby->exposedGetPhpBinary());
     }
 
     /**
