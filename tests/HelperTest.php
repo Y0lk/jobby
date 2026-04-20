@@ -106,9 +106,13 @@ class HelperTest extends TestCase
     public function testAquireAndReleaseLock()
     {
         $this->helper->acquireLock($this->lockFile);
+        $this->assertFileExists($this->lockFile);
         $this->helper->releaseLock($this->lockFile);
+        $this->assertSame('', file_get_contents($this->lockFile));
         $this->helper->acquireLock($this->lockFile);
+        $this->assertFileExists($this->lockFile);
         $this->helper->releaseLock($this->lockFile);
+        $this->assertSame('', file_get_contents($this->lockFile));
     }
 
     /**
@@ -292,14 +296,29 @@ class HelperTest extends TestCase
         $mail = $helper->sendMail('job', $config, 'message');
 
         $host = $helper->getHost();
-        $email = "jobby@$host";
         $this->assertStringContainsString('job', $mail->Subject);
         $this->assertStringContainsString("[$host]", $mail->Subject);
-        $this->assertEquals($email, $mail->From);
+        $this->assertEquals($config['smtpSender'], $mail->From);
         $this->assertEquals('jobby', $mail->FromName);
-        $this->assertEquals($email, $mail->Sender);
+        $this->assertEquals($config['smtpSender'], $mail->Sender);
         $this->assertStringContainsString($config['output'], $mail->Body);
         $this->assertStringContainsString('message', $mail->Body);
+    }
+
+    /**
+     * @covers ::getDefaultMailSender
+     */
+    public function testGetDefaultMailSenderNormalizesShortHostnames()
+    {
+        /** @var Helper $helper */
+        $helper = $this->getMockBuilder(Helper::class)
+            ->onlyMethods(['getHost'])
+            ->getMock();
+        $helper->expects($this->once())
+            ->method('getHost')
+            ->willReturn('runnervmeorf1');
+
+        $this->assertEquals('jobby@runnervmeorf1.local', $helper->getDefaultMailSender());
     }
 
     /**

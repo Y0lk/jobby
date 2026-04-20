@@ -43,6 +43,7 @@ class Helper
     public function sendMail($job, array $config, $message)
     {
         $host = $this->getHost();
+        $fromAddress = $this->normalizeSenderAddress($config['smtpSender']);
         $body = <<<EOF
 $message
 
@@ -58,8 +59,10 @@ EOF;
         }
         $mailer->Subject = "[$host] '{$job}' needs some attention!";
         $mailer->Body = $body;
-        $mailer->setFrom($config['smtpSender'], $config['smtpSenderName'], false);
-        $mailer->Sender = $config['smtpSender'];
+        if (!$mailer->setFrom($fromAddress, $config['smtpSenderName'], false)) {
+            throw new Exception("Unable to set sender address '$fromAddress'.");
+        }
+        $mailer->Sender = $fromAddress;
         $mailer->send();
 
         return $mailer;
@@ -99,6 +102,56 @@ EOF;
         }
 
         return $mailer;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultMailSender()
+    {
+        return $this->normalizeSenderAddress('jobby@' . $this->getHost());
+    }
+
+    /**
+     * PHPMailer requires a syntactically valid email address, while many hosts
+     * expose short machine names such as "runner123". Normalize those names to
+     * a safe local domain so the default sender remains usable.
+     *
+     * @param string $address
+     *
+     * @return string
+     */
+    private function normalizeSenderAddress($address)
+    {
+        $address = trim((string) $address);
+        if (filter_var($address, FILTER_VALIDATE_EMAIL)) {
+            return $address;
+        }
+
+        $parts = explode('@', $address, 2);
+        $localPart = isset($parts[0]) ? $parts[0] : 'jobby';
+        $domain = isset($parts[1]) ? $parts[1] : '';
+
+        $localPart = preg_replace("/[^A-Za-z0-9.!#$%&'*+\\/=?^_`{|}~-]+/", '', $localPart);
+        if ($localPart === '') {
+            $localPart = 'jobby';
+        }
+
+        $domain = preg_replace('/[^A-Za-z0-9.-]+/', '-', $domain);
+        $domain = trim($domain, '.-');
+        if ($domain !== '' && strpos($domain, '.') === false) {
+            $domain .= '.local';
+        }
+        if ($domain === '') {
+            $domain = 'localhost.localdomain';
+        }
+
+        $normalizedAddress = strtolower($localPart . '@' . $domain);
+        if (filter_var($normalizedAddress, FILTER_VALIDATE_EMAIL)) {
+            return $normalizedAddress;
+        }
+
+        return 'jobby@localhost.localdomain';
     }
 
     /**

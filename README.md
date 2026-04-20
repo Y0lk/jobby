@@ -224,7 +224,7 @@ smtpPort       | integer   | 25                                  | SMTP port, if
 smtpUsername   | string    | null                                | SMTP user, if `mailer` is smtp
 smtpPassword   | string    | null                                | SMTP password, if `mailer` is smtp
 smtpSecurity   | string    | null                                | SMTP security option: _ssl_ or _tls_, if `mailer` is smtp
-smtpSender     | string    | jobby@&lt;hostname&gt;              | The sender and from addresses used in SMTP notices
+smtpSender     | string    | derived from hostname               | The sender and from addresses used in SMTP notices, normalized to a valid email address when needed
 smtpSenderName | string    | Jobby                               | The name used in the from field for SMTP messages
 
 Error email delivery is powered by [`phpmailer/phpmailer`](https://github.com/PHPMailer/PHPMailer).

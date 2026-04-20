@@ -6,6 +6,7 @@
 * Add Composer branch alias `4.x-dev` for the fork's `master` branch.
 * Replace deprecated `swiftmailer/swiftmailer` with `phpmailer/phpmailer`.
 * Change `Jobby\Helper` mailer integration from SwiftMailer types to PHPMailer types.
+* Normalize the default sender address for environments that only expose a short hostname.
 * Add support for `laravel/serializable-closure` 2.x.
 * Replace the remaining `Opis\Closure` example usage with Laravel Serializable Closure.
 

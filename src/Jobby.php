@@ -66,7 +66,7 @@ class Jobby
             'smtpPort'       => 25,
             'smtpUsername'   => null,
             'smtpPassword'   => null,
-            'smtpSender'     => 'jobby@' . $this->getHelper()->getHost(),
+            'smtpSender'     => $this->getHelper()->getDefaultMailSender(),
             'smtpSenderName' => 'jobby',
             'smtpSecurity'   => null,
             'runAs'          => null,
