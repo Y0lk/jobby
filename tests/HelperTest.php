@@ -4,6 +4,7 @@ namespace Jobby\Tests;
 
 use Jobby\Helper;
 use Jobby\Jobby;
+use PHPMailer\PHPMailer\PHPMailer;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -277,7 +278,7 @@ class HelperTest extends TestCase
      */
     public function testSendMail()
     {
-        $mailer = $this->getSwiftMailerMock();
+        $mailer = $this->getPHPMailerMock();
         $mailer->expects($this->once())
             ->method('send')
         ;
@@ -292,25 +293,21 @@ class HelperTest extends TestCase
 
         $host = $helper->getHost();
         $email = "jobby@$host";
-        $this->assertStringContainsString('job', $mail->getSubject());
-        $this->assertStringContainsString("[$host]", $mail->getSubject());
-        $this->assertEquals(1, count($mail->getFrom()));
-        $this->assertEquals('jobby', current($mail->getFrom()));
-        $this->assertEquals($email, current(array_keys($mail->getFrom())));
-        $this->assertEquals($email, current(array_keys($mail->getSender())));
-        $this->assertStringContainsString($config['output'], $mail->getBody());
-        $this->assertStringContainsString('message', $mail->getBody());
+        $this->assertStringContainsString('job', $mail->Subject);
+        $this->assertStringContainsString("[$host]", $mail->Subject);
+        $this->assertEquals($email, $mail->From);
+        $this->assertEquals('jobby', $mail->FromName);
+        $this->assertEquals($email, $mail->Sender);
+        $this->assertStringContainsString($config['output'], $mail->Body);
+        $this->assertStringContainsString('message', $mail->Body);
     }
 
     /**
-     * @return \Swift_Mailer
+     * @return PHPMailer
      */
-    private function getSwiftMailerMock()
+    private function getPHPMailerMock()
     {
-        $nullTransport = new \Swift_NullTransport();
-
-        return $this->getMockBuilder(\Swift_Mailer::class)
-            ->setConstructorArgs([$nullTransport])
+        return $this->getMockBuilder(PHPMailer::class)
             ->onlyMethods(['send'])
             ->getMock();
     }

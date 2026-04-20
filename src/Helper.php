@@ -1,6 +1,8 @@
 <?php
 namespace Jobby;
 
+use PHPMailer\PHPMailer\PHPMailer;
+
 class Helper
 {
     /**
@@ -19,14 +21,14 @@ class Helper
     private $lockHandles = [];
 
     /**
-     * @var \Swift_Mailer
+     * @var PHPMailer|null
      */
     private $mailer;
 
     /**
-     * @param \Swift_Mailer $mailer
+     * @param PHPMailer|null $mailer
      */
-    public function __construct(\Swift_Mailer $mailer = null)
+    public function __construct(PHPMailer $mailer = null)
     {
         $this->mailer = $mailer;
     }
@@ -36,7 +38,7 @@ class Helper
      * @param array  $config
      * @param string $message
      *
-     * @return \Swift_Message
+     * @return PHPMailer
      */
     public function sendMail($job, array $config, $message)
     {
@@ -49,23 +51,24 @@ You can find its output in {$config['output']} on $host.
 Best,
 jobby@$host
 EOF;
-        $mail = new \Swift_Message();
-        $mail->setTo(explode(',', $config['recipients']));
-        $mail->setSubject("[$host] '{$job}' needs some attention!");
-        $mail->setBody($body);
-        $mail->setFrom([$config['smtpSender'] => $config['smtpSenderName']]);
-        $mail->setSender($config['smtpSender']);
-
         $mailer = $this->getCurrentMailer($config);
-        $mailer->send($mail);
+        $mailer->clearAllRecipients();
+        foreach (array_filter(array_map('trim', explode(',', (string) $config['recipients']))) as $recipient) {
+            $mailer->addAddress($recipient);
+        }
+        $mailer->Subject = "[$host] '{$job}' needs some attention!";
+        $mailer->Body = $body;
+        $mailer->setFrom($config['smtpSender'], $config['smtpSenderName'], false);
+        $mailer->Sender = $config['smtpSender'];
+        $mailer->send();
 
-        return $mail;
+        return $mailer;
     }
 
     /**
      * @param array $config
      *
-     * @return \Swift_Mailer
+     * @return PHPMailer
      */
     private function getCurrentMailer(array $config)
     {
@@ -73,23 +76,29 @@ EOF;
             return $this->mailer;
         }
 
-        $swiftVersion = (int) explode('.', \Swift::VERSION)[0];
+        $mailer = new PHPMailer();
+        $mailer->isHTML(false);
 
         if ($config['mailer'] === 'smtp') {
-            $transport = new \Swift_SmtpTransport(
-                $config['smtpHost'],
-                $config['smtpPort'],
-                $config['smtpSecurity']
-            );
-            $transport->setUsername($config['smtpUsername']);
-            $transport->setPassword($config['smtpPassword']);
-        } elseif ($swiftVersion < 6 && $config['mailer'] === 'mail') {
-            $transport = \Swift_MailTransport::newInstance();
+            $mailer->isSMTP();
+            $mailer->Host = $config['smtpHost'];
+            $mailer->Port = (int) $config['smtpPort'];
+            $mailer->SMTPAuth = !empty($config['smtpUsername']) || !empty($config['smtpPassword']);
+            $mailer->Username = $config['smtpUsername'];
+            $mailer->Password = $config['smtpPassword'];
+
+            if ($config['smtpSecurity'] === 'ssl') {
+                $mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($config['smtpSecurity'] === 'tls') {
+                $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            }
+        } elseif ($config['mailer'] === 'mail') {
+            $mailer->isMail();
         } else {
-            $transport = new \Swift_SendmailTransport();
+            $mailer->isSendmail();
         }
 
-        return new \Swift_Mailer($transport);
+        return $mailer;
     }
 
     /**

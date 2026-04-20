@@ -1,25 +1,43 @@
 {
-  "name": "hellogerard/jobby",
-  "homepage": "https://github.com/jobbyphp/jobby",
+  "name": "y0lk/jobby",
+  "homepage": "https://github.com/Y0lk/jobby",
   "license": "MIT",
+  "type": "library",
   "description": "Manage all your cron jobs without modifying crontab. Handles locking, logging, error emails, and more.",
   "authors": [
     {
+      "name": "Gabriel Jean",
+      "email": "gab@inkrebit.com",
+      "homepage": "https://github.com/Y0lk",
+      "role": "Maintainer"
+    },
+    {
       "name": "Gerard Sychay",
       "email": "hellogerard@gmail.com",
-      "homepage": "https://github.com/hellogerard"
+      "homepage": "https://github.com/hellogerard",
+      "role": "Original author"
     },
     {
       "name": "Michael Contento",
-      "homepage": "https://github.com/michaelcontento"
+      "homepage": "https://github.com/michaelcontento",
+      "role": "Contributor"
     }
+  ],
+  "keywords": [
+    "cron",
+    "scheduler",
+    "jobs",
+    "cli"
   ],
   "require": {
     "php": "^7.4|^8.0",
     "dragonmantank/cron-expression": "^3.0",
     "laravel/serializable-closure": "^1.1|^2.0",
-    "swiftmailer/swiftmailer": "^5.4|^6.0",
+    "phpmailer/phpmailer": "^7.0",
     "symfony/process": "^2.7|^3.0|^4.0|^5.0|^6.0|^7.0"
+  },
+  "replace": {
+    "hellogerard/jobby": "self.version"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.6",
@@ -33,6 +51,15 @@
   "autoload-dev": {
     "psr-4": {
       "Jobby\\Tests\\": "tests"
+    }
+  },
+  "support": {
+    "issues": "https://github.com/Y0lk/jobby/issues",
+    "source": "https://github.com/Y0lk/jobby"
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "4.x-dev"
     }
   },
   "config": {
